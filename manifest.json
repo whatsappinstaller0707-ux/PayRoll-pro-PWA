@@ -1,0 +1,17 @@
+{
+  "name": "Jay Tech Payroll Pro",
+  "short_name": "Payroll",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f5f6fa",
+  "theme_color": "#4f7cff",
+  "description": "Professional Payroll Management for Mobile",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/552/552848.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
