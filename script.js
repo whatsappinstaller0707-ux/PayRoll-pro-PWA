@@ -91,8 +91,10 @@ function calc() {
     const gross = earnings;
     const net = gross - deductions;
 
-    document.getElementById('grossDisp').innerText = gross.toLocaleString() + " MWK";
-    document.getElementById('netDisp').innerText = net.toLocaleString() + " MWK";
+    const gDisp = document.getElementById('grossDisp');
+    const nDisp = document.getElementById('netDisp');
+    if(gDisp) gDisp.innerText = gross.toLocaleString() + " MWK";
+    if(nDisp) nDisp.innerText = net.toLocaleString() + " MWK";
 
     return { gross, net, vals, dailyRate };
 }
@@ -122,11 +124,15 @@ function saveEntry() {
 }
 
 function resetForm() {
-    document.getElementById('empName').value = "";
-    document.getElementById('empRank').value = "";
+    const nameInput = document.getElementById('empName');
+    const rankSelect = document.getElementById('empRank');
+    if(nameInput) nameInput.value = "";
+    if(rankSelect) rankSelect.value = "";
     renderDynamicInputs(); 
-    document.getElementById('grossDisp').innerText = "0 MWK";
-    document.getElementById('netDisp').innerText = "0 MWK";
+    const gDisp = document.getElementById('grossDisp');
+    const nDisp = document.getElementById('netDisp');
+    if(gDisp) gDisp.innerText = "0 MWK";
+    if(nDisp) nDisp.innerText = "0 MWK";
 }
 
 function updateEntryCount() {
@@ -222,7 +228,7 @@ function renderFormulaEditor() {
     for (let key in formulaConfig) {
         const conf = formulaConfig[key];
         container.innerHTML += `
-            <div class="toggle-row">
+            <div class="toggle-row" style="display:flex; align-items:center; margin-bottom:10px">
                 <div style="flex:1">
                     <strong>${conf.label}</strong><br>
                     <small>${conf.type === 'multiplier' ? 'Adds to Gross' : 'Subtracts from Gross'}</small>
@@ -324,15 +330,17 @@ function clearAllData() {
 }
 
 function updateBizProfile() {
-    const name = document.getElementById('bizNameInput').value;
+    const nameInput = document.getElementById('bizNameInput');
+    const name = nameInput ? nameInput.value : (localStorage.getItem('payrollBizName') || "My Business");
     const logoBase64 = localStorage.getItem('payrollLogoUrl');
     
-    document.getElementById('displayBizName').innerText = name || "My Business";
+    const displayTitle = document.getElementById('displayBizName');
+    if(displayTitle) displayTitle.innerText = name || "My Business";
     
     const iconDiv = document.getElementById('profileIcon');
     const navIcon = document.querySelector('.nav-icon');
 
-    let content = logoBase64 ? `<img src="${logoBase64}" class="logo-img">` : 
+    let content = logoBase64 ? `<img src="${logoBase64}" class="logo-img" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : 
                   (name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2) || "JS");
 
     if(iconDiv) iconDiv.innerHTML = content;
@@ -350,11 +358,25 @@ function loadBizProfile() {
     const name = localStorage.getItem('payrollBizName') || "";
     const theme = localStorage.getItem('payrollTheme') || "theme-blue";
 
-    if(document.getElementById('bizNameInput')) document.getElementById('bizNameInput').value = name;
-    if(document.getElementById('themeSelect')) document.getElementById('themeSelect').value = theme;
+    const nameInput = document.getElementById('bizNameInput');
+    const themeSelect = document.getElementById('themeSelect');
+
+    if(nameInput) nameInput.value = name;
+    if(themeSelect) themeSelect.value = theme;
     
     changeTheme(theme);
     updateBizProfile();
 }
 
+// --- INITIALIZATION ---
 window.onload = init;
+
+// --- SERVICE WORKER REGISTRATION (NEW) ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log("Service Worker Registered", reg))
+          .catch(err => console.log("Service Worker Failed", err));
+    });
+}
+
