@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jay Tech Payroll</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f7cff">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <div id="mainScreen" class="screen active">
+        <div class="container">
+            <div class="topbar">
+                <div class="circle nav-icon" onclick="showScreen('menuScreen')">JS</div>
+                <h3>Payroll Entry</h3>
+                <div id="count" class="badge">0</div>
+            </div>
+
+            <input id="empName" type="text" placeholder="Employee Name">
+            <select id="empRank" onchange="updateRateInput()"></select>
+            
+            <div id="dynamicInputs"></div>
+
+            <div class="display-box"><span>Gross:</span><span id="grossDisp">0 MWK</span></div>
+            <div class="display-box"><span>Net:</span><span id="netDisp">0 MWK</span></div>
+
+            <button class="save-btn" onclick="saveEntry()">Save Entry</button>
+            <button class="reset-link" onclick="resetForm()" style="background:none; color:#666; font-size:12px; margin-top:10px; width:100%; border:none;">Clear Form</button>
+        </div>
+    </div>
+
+    <div id="menuScreen" class="screen">
+        <div class="container">
+            <div class="topbar">
+                <div class="circle" onclick="showScreen('mainScreen')">←</div>
+                <h3>Management</h3>
+                <div></div>
+            </div>
+            <button class="menu-item" onclick="showScreen('historyScreen')">View History</button>
+            <button class="menu-item" onclick="showScreen('rateScreen')">Edit Rank Rates</button>
+            <button class="menu-item" onclick="showScreen('formulaScreen')">Edit Formulas & Inputs</button>
+            <button class="menu-item" onclick="showScreen('profileScreen')">Customize Profile</button>
+            <button class="export-btn" onclick="exportToExcel()">Export to Excel (.xlsx)</button>
+        </div>
+    </div>
+
+    <div id="rateScreen" class="screen">
+        <div class="container">
+            <div class="topbar">
+                <div class="circle" onclick="showScreen('menuScreen')">←</div>
+                <h3>Rank Rates</h3>
+                <div></div>
+            </div>
+            <div id="ratesEditorList"></div>
+            <div class="add-section" style="margin-top:20px; border-top:1px solid #eee; padding-top:20px">
+                <input id="newRankName" placeholder="New Rank Name">
+                <input id="newRankRate" type="number" placeholder="Daily Rate">
+                <button class="save-btn" onclick="addRank()">Add Rank</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="formulaScreen" class="screen">
+        <div class="container">
+            <div class="topbar">
+                <div class="circle" onclick="showScreen('menuScreen')">←</div>
+                <h3>Formula Settings</h3>
+                <div></div>
+            </div>
+            <div id="formulaToggles"></div>
+            <button class="save-btn" onclick="showScreen('menuScreen')" style="margin-top:20px">Apply Changes</button>
+        </div>
+    </div>
+
+    <div id="historyScreen" class="screen">
+        <div class="container">
+            <div class="topbar">
+                <div class="circle" onclick="showScreen('menuScreen')">←</div>
+                <h3>History</h3>
+                <div onclick="clearAllData()" style="color:red; cursor:pointer; font-size:12px">Purge All</div>
+            </div>
+            <div id="historySummary" style="background:var(--bg); padding:15px; border-radius:12px; margin-bottom:15px; font-weight:bold; color:var(--primary); text-align:center; border:1px solid var(--primary);">
+                Total Payout: <span id="totalHistoryNet">0</span> MWK
+            </div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <div id="profileScreen" class="screen">
+        <div class="container">
+            <div class="topbar">
+                <div class="circle" onclick="showScreen('menuScreen')">←</div>
+                <h3>App Profile</h3>
+                <div></div>
+            </div>
+            
+            <div style="text-align:center; margin-bottom:20px">
+                <div class="circle" id="profileIcon" style="width:80px; height:80px; font-size:24px; margin:auto">JS</div>
+                <h4 id="displayBizName" style="margin-top:10px">My Business</h4>
+            </div>
+
+            <div style="margin-bottom:15px">
+                <label style="font-size:11px; font-weight:bold; opacity:0.7">BUSINESS NAME</label>
+                <input id="bizNameInput" placeholder="e.g. Jay Tech Inc" oninput="updateBizProfile()">
+            </div>
+
+            <div style="margin-bottom:15px">
+                <label style="font-size:11px; font-weight:bold; opacity:0.7">APP THEME</label>
+                <select id="themeSelect" onchange="changeTheme(this.value)">
+                    <option value="theme-blue">Professional Blue</option>
+                    <option value="theme-dark">Midnight Dark</option>
+                    <option value="theme-green">Forest Green</option>
+                    <option value="theme-warm">Warm Orange</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:15px">
+                <label style="font-size:11px; font-weight:bold; opacity:0.7">BUSINESS LOGO</label>
+                <input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="uploadLogo(this)">
+                <button class="menu-item" style="font-size:13px; text-align:center; padding:12px" onclick="document.getElementById('logoFileInput').click()">
+                    📸 Select Logo from Gallery
+                </button>
+            </div>
+            
+            <button class="save-btn" onclick="showScreen('menuScreen')" style="margin-top:20px">Save & Return</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
