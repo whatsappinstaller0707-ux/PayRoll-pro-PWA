@@ -44,7 +44,7 @@
             <button class="menu-item" onclick="showScreen('rateScreen')">Edit Rank Rates</button>
             <button class="menu-item" onclick="showScreen('formulaScreen')">Edit Formulas & Inputs</button>
             <button class="menu-item" onclick="showScreen('profileScreen')">Customize Profile</button>
-            <button class="export-btn" onclick="exportToExcel()">Export to Excel (.xlsx)</button>
+            <button class="export-btn" onclick="openExportModal()">Export to Excel (.xlsx)</button>
         </div>
     </div>
 
@@ -129,8 +129,39 @@
             <button class="save-btn" onclick="showScreen('menuScreen')" style="margin-top:20px">Save & Return</button>
         </div>
     </div>
-
-    <script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+<script src="script.js"></script>
+<!-- EXPORT MODAL -->
+<div id="exportModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:15px; width:90%; max-width:400px;">
+        
+        <h3 style="margin-top:0;">Export Settings</h3>
+        
+        <input type="text" id="exportCompany" placeholder="Company Name">
+        
+        <select id="exportMonth">
+            <option value="">Select Month</option>
+            <option>January</option>
+            <option>February</option>
+            <option>March</option>
+            <option>April</option>
+            <option>May</option>
+            <option>June</option>
+            <option>July</option>
+            <option>August</option>
+            <option>September</option>
+            <option>October</option>
+            <option>November</option>
+            <option>December</option>
+        </select>
+        
+        <input type="text" id="exportTitle" placeholder="Document Title (editable)">
+        
+        <button onclick="confirmExport()" class="export-btn">Generate Excel</button>
+        <button onclick="closeExportModal()" style="background:#ccc;">Cancel</button>
+        
+    </div>
+</div>
 </body>
 </html>
 
