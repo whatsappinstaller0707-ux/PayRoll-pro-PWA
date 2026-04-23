@@ -152,74 +152,114 @@ function uploadLogo(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
-
-// --- EXPORT TO EXCEL (GOSHEN STYLE) ---
-function exportToExcel() {
-    if(!entries.length) return alert("No history to export.");
-
-    const bizName = localStorage.getItem('payrollBizName') || "Jay Tech Inc";
-    const reportDate = new Date().toLocaleDateString();
-
-    const grouped = {};
-    entries.forEach(e => {
-        if (!grouped[e.Rank]) grouped[e.Rank] = [];
-        grouped[e.Rank].push(e);
-    });
-
-    const exportData = [];
-    exportData.push({ "B": bizName.toUpperCase() });
-    exportData.push({ "B": "PAYROLL REPORT: " + reportDate });
-    exportData.push({}); 
-
-    const headers = {
-        "A": "NO", "B": "NAME", "C": "RATE", "D": "DAYS", "E": "GROSS", 
-        "F": "WELFARE", "G": "LOAN", "H": "RATION", "I": "NET"
-    };
-    exportData.push(headers);
-
-    let globalCounter = 1;
-    let grandTotal = 0;
-
-    for (let rank in grouped) {
-        exportData.push({ "B": "--- " + rank.toUpperCase() + " ---" });
+async function loadTemplate(templateName) {
+    const response = await fetch(`templates/${templateName}`);
+    
+    if (!response.ok) {
+        throw new Error("Template not found: " + templateName);
+    }
+    
+    return await response.arrayBuffer();
+}
+async function exportToExcel(company, month, title) {
+    if (!entries.length) return alert("No data");
+    
+    try {
+        const templateFile = "template.xlsx";
+        const buffer = await loadTemplate(templateFile);
         
-        let rankGross = 0;
-        let rankNet = 0;
-
-        grouped[rank].forEach(e => {
-            exportData.push({
-                "A": globalCounter++,
-                "B": e.Name,
-                "C": e.DailyRate,
-                "D": e.days || 0,
-                "E": e.Gross,
-                "F": e.welfare || 0,
-                "G": e.loan || 0,
-                "H": e.ration || 0,
-                "I": e.Net
-            });
-            rankGross += e.Gross;
-            rankNet += e.Net;
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+        
+        const worksheet = workbook.worksheets[0];
+        
+        // ✅ COLUMN COUNT (MATCH YOUR TEMPLATE EXACTLY)
+        const totalColumns = 7; // No, Name, Days, Gross, Welfare, Loan, Ration, Net → adjust if needed
+        
+        // ✅ TITLE (ROW 1)
+        worksheet.getCell("A1").value = title;
+        
+        worksheet.getCell("A1").alignment = { horizontal: "center" };
+        worksheet.getCell("A1").font = { bold: true, size: 14 };
+        
+        // ✅ COMPANY + MONTH (ROW 3)
+        worksheet.getCell("A3").value = `${company} - End month of ${month}`;
+        worksheet.getCell("A3").alignment = { horizontal: "left" };
+        worksheet.getCell("A3").font = { bold: true };
+        
+        // ✅ DATA STARTS (ROW 5 because headers are row 4)
+        let currentRow = 5;
+        
+        let totals = { gross: 0, net: 0 };
+        
+        let deductionTotals = {
+            welfare: 0,
+            loan: 0,
+            ration: 0
+        };
+        
+        // ✅ WRITE DATA
+        entries.forEach((e, i) => {
+            const row = worksheet.getRow(currentRow);
+            let col = 1;
+            
+            row.getCell(col++).value = i + 1;
+            row.getCell(col++).value = e.Name;
+            
+            if (formulaConfig.days?.active) {
+                row.getCell(col++).value = e.days || 0;
+            }
+            
+            row.getCell(col++).value = e.Gross || 0;
+            
+            if (formulaConfig.welfare?.active) {
+                const val = e.welfare || 0;
+                row.getCell(col++).value = val;
+                deductionTotals.welfare += val;
+            }
+            
+            if (formulaConfig.loan?.active) {
+                const val = e.loan || 0;
+                row.getCell(col++).value = val;
+                deductionTotals.loan += val;
+            }
+            
+            if (formulaConfig.ration?.active) {
+                const val = e.ration || 0;
+                row.getCell(col++).value = val;
+                deductionTotals.ration += val;
+            }
+            
+            row.getCell(col++).value = e.Net || 0;
+            
+            totals.gross += e.Gross || 0;
+            totals.net += e.Net || 0;
+            
+            row.commit();
+            currentRow++;
         });
 
-        exportData.push({ "B": "TOTAL FOR " + rank, "E": rankGross, "I": rankNet });
-        exportData.push({}); 
-        grandTotal += rankNet;
+        // ✅ DOWNLOAD
+        const outBuffer = await workbook.xlsx.writeBuffer();
+        
+        const blob = new Blob([outBuffer], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        
+        a.href = url;
+        a.download = "Payroll_Output.xlsx";
+        a.click();
+        
+        URL.revokeObjectURL(url);
+        
+    } catch (err) {
+        console.error(err);
+        alert("Error: " + err.message);
     }
-
-    exportData.push({ "B": "GRAND TOTAL PAYOUT", "I": grandTotal });
-
-    const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
-    ws['!cols'] = [
-        { wch: 6 }, { wch: 28 }, { wch: 12 }, { wch: 8 }, 
-        { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 18 }
-    ];
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "PaySheet");
-    XLSX.writeFile(wb, `${bizName}_Payroll_${reportDate.replace(/\//g, '-')}.xlsx`);
 }
-
 // --- SETTINGS & PROFILE ---
 function renderFormulaEditor() {
     const container = document.getElementById('formulaToggles');
@@ -379,4 +419,24 @@ if ('serviceWorker' in navigator) {
           .catch(err => console.log("Service Worker Failed", err));
     });
 }
+function openExportModal() {
+    document.getElementById('exportModal').style.display = "flex";
+}
 
+function closeExportModal() {
+    document.getElementById('exportModal').style.display = "none";
+}
+
+function confirmExport() {
+    const company = document.getElementById('exportCompany').value;
+    const month = document.getElementById('exportMonth').value;
+    const title = document.getElementById('exportTitle').value || "Monthly payments arrangement";
+    
+    if (!company || !month) {
+        alert("Fill all fields");
+        return;
+    }
+    
+    closeExportModal();
+    exportToExcel(company, month, title);
+}
